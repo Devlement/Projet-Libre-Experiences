@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jouer - {{ experience.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <nav class="bg-white shadow-md p-4 mb-8">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Expériences Satisfaisantes</h1>
+            <div class="space-x-4">
+                <a href="/" class="text-blue-600 hover:text-blue-800">Accueil</a>
+                {% if session.get('username') %}
+                    <a href="/create" class="text-blue-600 hover:text-blue-800">Créer une expérience</a>
+                    <a href="/logout" class="text-blue-600 hover:text-blue-800">Déconnexion</a>
+                {% else %}
+                    <a href="/login" class="text-blue-600 hover:text-blue-800">Connexion</a>
+                {% endif %}
+                <a href="/faq" class="text-blue-600 hover:text-blue-800">FAQ</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mx-auto px-4 max-w-6xl">
+        <div class="bg-white shadow-md rounded-lg p-8 mb-6">
+            <h1 class="text-3xl font-bold mb-4 text-gray-800">{{ experience.title }}</h1>
+            <p class="text-gray-600 mb-4">{{ experience.description }}</p>
+            <p class="text-sm text-gray-500"><em>Par {{ experience.author }} • {{ experience.plays }} lectures</em></p>
+        </div>
+
+        {% if experience.type == 'interactive' %}
+        <!-- Expérience interactive avec p5.js -->
+        <div class="bg-white shadow-md rounded-lg p-8">
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-semibold mb-2">Expérience Interactive</h2>
+                <p class="text-gray-600">Interagissez avec la simulation ci-dessous !</p>
+            </div>
+
+            <div class="flex justify-center">
+                <div id="p5-container" class="border-2 border-gray-300 rounded-lg overflow-hidden" style="width: 100%; max-width: 600px; height: 400px; display: flex; justify-content: center; align-items: center;">
+                    <!-- Le canvas p5.js sera créé ici -->
+                </div>
+            </div>
+
+            <!-- Contrôles d'interaction -->
+            <div class="mt-4 flex justify-center space-x-4">
+                <button id="clear-canvas" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                    Effacer le canvas
+                </button>
+                <button id="restart-experience" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                    Redémarrer
+                </button>
+            </div>
+
+            <!-- Instructions -->
+            <div class="mt-4 text-center text-gray-600">
+                <p>Utilisez votre souris pour interagir avec l'expérience. Cliquez sur "Effacer" pour nettoyer le canvas ou "Redémarrer" pour recommencer.</p>
+            </div>
+
+            <div class="mt-6 text-center">
+                <a href="/" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">
+                    Retour à l'accueil
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <!-- Ancienne expérience narrative -->
+        <div class="bg-white shadow-md rounded-lg p-8">
+            <div class="text-center">
+                <p class="text-lg text-gray-700 mb-4">{{ experience.description }}</p>
+                <p class="text-gray-600">Cette expérience utilise l'ancien système narratif.</p>
+                <a href="/" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg mt-4 inline-block">
+                    Retour à l'accueil
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if experience.type == 'interactive' %}
+    <script>
+        // Créer un conteneur pour le sketch p5.js AVANT de charger le code
+        let p5SketchParent = null;
+        
+        // Code JavaScript de l'expérience
+        {{ experience.code | safe }}
+        
+        // Après le chargement de p5, reparenter le canvas dans le bon conteneur
+        setTimeout(function() {
+            const container = document.getElementById('p5-container');
+            const canvas = document.querySelector('canvas');
+            
+            if (canvas && container && canvas.parentElement !== container) {
+                // Vider le conteneur et y mettre le canvas
+                container.innerHTML = '';
+                container.appendChild(canvas);
+                
+                // Ne pas forcer les dimensions du canvas, p5.js gère ça
+                canvas.style.display = 'block';
+                canvas.style.margin = '0 auto';
+            }
+        }, 100);
+    </script>
+    <script>
+        // Contrôles supplémentaires pour l'interaction
+        document.getElementById('clear-canvas').addEventListener('click', function() {
+            if (typeof background !== 'undefined') {
+                background(220); // Effacer le canvas
+            }
+        });
+
+        document.getElementById('restart-experience').addEventListener('click', function() {
+            // Redémarrer en rechargeant la page ou en réinitialisant les variables
+            location.reload();
+        });
+
+        // Rendre le canvas responsive
+        function windowResized() {
+            if (typeof resizeCanvas !== 'undefined') {
+                let container = document.getElementById('p5-container');
+                if (container) {
+                    resizeCanvas(container.offsetWidth, 400);
+                }
+            }
+        }
+        window.addEventListener('resize', windowResized);
+    </script>
+    {% endif %}
+</body>
+</html>

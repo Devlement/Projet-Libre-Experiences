@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - Expériences Satisfaisantes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-100 font-sans">
+    <nav class="bg-white shadow-md p-4 mb-8">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Expériences Satisfaisantes</h1>
+            <div class="space-x-4">
+                <a href="/" class="text-blue-600 hover:text-blue-800 font-semibold">Accueil</a>
+                {% if session.get('username') %}
+                    <a href="/create" class="text-blue-600 hover:text-blue-800">Créer</a>
+                    <a href="/logout" class="text-blue-600 hover:text-blue-800">Déconnexion</a>
+                    {% if session['username'] == 'Admin' %}
+                        <a href="/admin" class="text-red-600 hover:text-red-800" title="Administration">
+                            <svg class="w-6 h-6 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="/login" class="text-blue-600 hover:text-blue-800">Connexion</a>
+                {% endif %}
+
+            </div>
+        </div>
+    </nav>
+    <div class="container mx-auto px-4 max-w-6xl">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">Expériences Satisfaisantes</h1>
+            <p class="text-xl text-gray-600 mb-8">Découvrez et partagez des expériences interactives uniques</p>
+            {% if not session.get('username') %}
+                <div class="space-x-4">
+                    <a href="/register" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                        S'inscrire
+                    </a>
+                    <a href="/login" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                        Se connecter
+                    </a>
+                </div>
+            {% else %}
+                <a href="/create" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                    Créer une expérience
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Expériences récentes</h2>
+            {% if experiences %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for experience in experiences %}
+                        <div class="bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ experience.title }}</h3>
+                            <p class="text-gray-600 mb-4 line-clamp-3">{{ experience.description }}</p>
+                            <div class="flex justify-between items-center text-sm text-gray-500 mb-4">
+                                <span>Par {{ experience.author }}</span>
+                                <span>{{ experience.plays }} lectures</span>
+                            </div>
+                            <a href="/play/{{ experience._id }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors inline-block">
+                                Jouer
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white shadow-md rounded-lg p-8 text-center">
+                    <p class="text-gray-600 mb-4">Aucune expérience n'a encore été créée.</p>
+                    {% if session.get('username') %}
+                        <a href="/create" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            Créer la première expérience
+                        </a>
+                    {% else %}
+                        <a href="/login" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            Se connecter pour créer
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="bg-white shadow-md rounded-lg p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">À propos</h2>
+            <p class="text-gray-600 mb-4">
+                Expériences Satisfaisantes est une plateforme où vous pouvez créer et partager des expériences interactives uniques.
+                Que vous soyez développeur ou non, vous pouvez créer des animations, des jeux ou des expériences visuelles
+                qui procurent du plaisir et de la satisfaction.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">🎨 Mode Visuel</h3>
+                    <p class="text-gray-600">Créez des expériences sans écrire une ligne de code grâce à notre interface intuitive.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">💻 Mode Code</h3>
+                    <p class="text-gray-600">Pour les développeurs : utilisez JavaScript et p5.js pour créer des expériences avancées.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

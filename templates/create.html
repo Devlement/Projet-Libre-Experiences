@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer une expérience - Expériences Satisfaisantes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-100 font-sans">
+    <nav class="bg-white shadow-md p-4 mb-8">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Expériences Satisfaisantes</h1>
+            <div class="space-x-4">
+                <a href="/" class="text-blue-600 hover:text-blue-800">Accueil</a>
+                {% if session.get('username') %}
+                    <a href="/create" class="text-blue-600 hover:text-blue-800 font-semibold">Créer</a>
+                    <a href="/logout" class="text-blue-600 hover:text-blue-800">Déconnexion</a>
+                {% else %}
+                    <a href="/login" class="text-blue-600 hover:text-blue-800">Connexion</a>
+                {% endif %}
+                <a href="/faq" class="text-blue-600 hover:text-blue-800">FAQ</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mx-auto px-4 max-w-6xl">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gray-800">Créer une expérience interactive</h1>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    <ul>
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Sélecteur de mode -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+            <div class="flex justify-center space-x-4 mb-4">
+                <button id="visualModeBtn" onclick="switchMode('visual')" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                    🎨 Mode Visuel (Sans Code)
+                </button>
+                <button id="codeModeBtn" onclick="switchMode('code')" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                    💻 Mode Code (Développeurs)
+                </button>
+            </div>
+            <p class="text-center text-gray-600">
+                <span id="modeDescription">Choisissez votre mode de création d'expérience</span>
+            </p>
+        </div>
+
+        <form method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" id="experienceForm">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="title">
+                    Titre de l'expérience
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="title" type="text" name="title" placeholder="Titre de l'expérience" required>
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
+                    Description de départ
+                </label>
+                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-32 resize-none" id="description" name="description" placeholder="Description de l'expérience" required></textarea>
+            </div>
+
+            <!-- Mode Visuel -->
+            <div id="visualMode" class="hidden">
+                <h3 class="text-lg font-semibold mb-4">Choisissez un type d'expérience</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <div class="experience-type border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors" data-type="mouse-trail">
+                        <h4 class="font-semibold mb-2">🖱️ Traînée à la souris</h4>
+                        <p class="text-sm text-gray-600">Créez des traces colorées en bougeant la souris</p>
+                    </div>
+                    <div class="experience-type border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors" data-type="gravity">
+                        <h4 class="font-semibold mb-2">🌍 Gravité</h4>
+                        <p class="text-sm text-gray-600">Objets tombant avec rebonds</p>
+                    </div>
+                    <div class="experience-type border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors" data-type="particles">
+                        <h4 class="font-semibold mb-2">✨ Particules</h4>
+                        <p class="text-sm text-gray-600">Système de particules interactives</p>
+                    </div>
+                    <div class="experience-type border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors" data-type="bouncing-ball">
+                        <h4 class="font-semibold mb-2">🏀 Balle rebondissante</h4>
+                        <p class="text-sm text-gray-600">Balle qui rebondit sur les bords</p>
+                    </div>
+                    <div class="experience-type border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors" data-type="rain">
+                        <h4 class="font-semibold mb-2">🌧️ Pluie</h4>
+                        <p class="text-sm text-gray-600">Gouttes de pluie animées</p>
+                    </div>
+                    <div class="experience-type border-2 border-gray-300 rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-colors" data-type="fireworks">
+                        <h4 class="font-semibold mb-2">🎆 Feux d'artifice</h4>
+                        <p class="text-sm text-gray-600">Explosions colorées au clic</p>
+                    </div>
+                </div>
+
+                <div id="visualOptions" class="hidden">
+                    <h4 class="font-semibold mb-4">Personnalisez votre expérience</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Couleur principale</label>
+                            <input type="color" id="mainColor" value="#ff0000" class="w-full h-10 border rounded">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Taille</label>
+                            <input type="range" id="size" min="5" max="50" value="20" class="w-full">
+                            <span id="sizeValue" class="text-sm text-gray-600">20</span>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Vitesse</label>
+                            <input type="range" id="speed" min="0.1" max="5" step="0.1" value="1" class="w-full">
+                            <span id="speedValue" class="text-sm text-gray-600">1.0</span>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Gravité</label>
+                            <input type="range" id="gravity" min="0" max="2" step="0.1" value="0.5" class="w-full">
+                            <span id="gravityValue" class="text-sm text-gray-600">0.5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mode Code -->
+            <div id="codeMode" class="hidden">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="code">
+                    Code JavaScript (utilisant p5.js)
+                </label>
+                <div class="mb-2 text-sm text-gray-600">
+                    Utilisez les fonctions p5.js : <code>setup()</code>, <code>draw()</code>, <code>mousePressed()</code>, etc.
+                    <br>Exemple de code de base :
+                </div>
+                <pre class="bg-gray-100 p-3 rounded text-sm mb-3 overflow-x-auto"><code>{% raw %}function setup() {{
+  createCanvas(400, 400);
+}}
+
+function draw() {{
+  background(220);
+  // Votre code ici
+}}{% endraw %}</code></pre>
+                <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline h-64 font-mono text-sm" id="code" name="code" placeholder="Écrivez votre code JavaScript ici..." required>{% raw %}function setup() {{
+  createCanvas(400, 400);
+}}
+
+function draw() {{
+  background(220);
+  // Votre code créatif ici !
+}}{% endraw %}</textarea>
+            </div>
+
+            <input type="hidden" id="experienceType" name="experience_type" value="visual">
+            <input type="hidden" id="visualConfig" name="visual_config" value="{}">
+
+            <div class="flex items-center justify-between mt-6">
+                <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                    Créer l'expérience
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let selectedExperienceType = null;
+        let visualConfig = {};
+
+        function switchMode(mode) {
+            const visualMode = document.getElementById('visualMode');
+            const codeMode = document.getElementById('codeMode');
+            const visualBtn = document.getElementById('visualModeBtn');
+            const codeBtn = document.getElementById('codeModeBtn');
+            const description = document.getElementById('modeDescription');
+            const typeInput = document.getElementById('experienceType');
+
+            if (mode === 'visual') {
+                visualMode.classList.remove('hidden');
+                codeMode.classList.add('hidden');
+                visualBtn.classList.remove('bg-gray-500', 'hover:bg-gray-700');
+                visualBtn.classList.add('bg-blue-500', 'hover:bg-blue-700');
+                codeBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
+                codeBtn.classList.add('bg-gray-500', 'hover:bg-gray-700');
+                description.textContent = 'Créez des expériences sans écrire une ligne de code !';
+                typeInput.value = 'visual';
+            } else {
+                visualMode.classList.add('hidden');
+                codeMode.classList.remove('hidden');
+                codeBtn.classList.remove('bg-gray-500', 'hover:bg-gray-700');
+                codeBtn.classList.add('bg-blue-500', 'hover:bg-blue-700');
+                visualBtn.classList.remove('bg-blue-500', 'hover:bg-blue-700');
+                visualBtn.classList.add('bg-gray-500', 'hover:bg-gray-700');
+                description.textContent = 'Pour les développeurs : écrivez votre propre code JavaScript';
+                typeInput.value = 'code';
+            }
+        }
+
+        // Gestion des types d'expériences visuelles
+        document.querySelectorAll('.experience-type').forEach(type => {
+            type.addEventListener('click', function() {
+                document.querySelectorAll('.experience-type').forEach(t => {
+                    t.classList.remove('border-blue-500', 'bg-blue-50');
+                    t.classList.add('border-gray-300');
+                });
+                this.classList.remove('border-gray-300');
+                this.classList.add('border-blue-500', 'bg-blue-50');
+                selectedExperienceType = this.dataset.type;
+                document.getElementById('visualOptions').classList.remove('hidden');
+                updateVisualConfig();
+            });
+        });
+
+        // Mise à jour des contrôles visuels
+        document.getElementById('size').addEventListener('input', function() {
+            document.getElementById('sizeValue').textContent = this.value;
+            updateVisualConfig();
+        });
+        document.getElementById('speed').addEventListener('input', function() {
+            document.getElementById('speedValue').textContent = this.value;
+            updateVisualConfig();
+        });
+        document.getElementById('gravity').addEventListener('input', function() {
+            document.getElementById('gravityValue').textContent = this.value;
+            updateVisualConfig();
+        });
+        document.getElementById('mainColor').addEventListener('input', updateVisualConfig);
+
+        function updateVisualConfig() {
+            visualConfig = {
+                type: selectedExperienceType,
+                color: document.getElementById('mainColor').value,
+                size: parseInt(document.getElementById('size').value),
+                speed: parseFloat(document.getElementById('speed').value),
+                gravity: parseFloat(document.getElementById('gravity').value)
+            };
+            document.getElementById('visualConfig').value = JSON.stringify(visualConfig);
+        }
+
+        // Démarrer en mode visuel
+        switchMode('visual');
+    </script>
+</body>
+</html>

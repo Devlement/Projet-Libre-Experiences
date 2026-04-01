@@ -497,7 +497,25 @@ def admin():
     users = list(users_collection.find())
     experiences = list(experiences_collection.find())
     total_plays = sum(exp.get('plays', 0) for exp in experiences)
-    return render_template('admin/admin.html', users=users, experiences=experiences, total_plays=total_plays)
+    
+    # Statistiques supplémentaires
+    banned_users = [u for u in users if u.get('banned', False)]
+    active_users = [u for u in users if not u.get('banned', False)]
+    
+    # Top expériences par plays
+    top_experiences = sorted(experiences, key=lambda x: x.get('plays', 0), reverse=True)[:5]
+    
+    # Utilisateurs avec le plus d'expériences
+    user_exp_counts = {}
+    for exp in experiences:
+        creator = exp.get('creator')
+        if creator:
+            user_exp_counts[creator] = user_exp_counts.get(creator, 0) + 1
+    top_creators = sorted(user_exp_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    
+    return render_template('admin/admin.html', users=users, experiences=experiences, total_plays=total_plays,
+                           banned_users=banned_users, active_users=active_users, top_experiences=top_experiences,
+                           top_creators=top_creators)
 
 @app.route('/delete_experience/<experience_id>', methods=['POST'])
 def delete_experience(experience_id):
@@ -528,6 +546,34 @@ def unban_user(username):
     users_collection.update_one({'username': username}, {'$set': {'banned': False}})
     flash(f'Utilisateur {username} autorisé.')
     return redirect(url_for('admin'))
+
+@app.route('/admin/user/<username>')
+def admin_user_detail(username):
+    """Détails d'un utilisateur pour l'admin."""
+    if 'username' not in session or session['username'] != 'Admin':
+        return redirect(url_for('login'))
+    user = users_collection.find_one({'username': username})
+    if not user:
+        flash('Utilisateur non trouvé.')
+        return redirect(url_for('admin'))
+    user_experiences = list(experiences_collection.find({'creator': username}))
+    total_plays = sum(exp.get('plays', 0) for exp in user_experiences)
+    return render_template('admin/user_detail.html', user=user, experiences=user_experiences, total_plays=total_plays)
+
+@app.route('/admin/experience/<experience_id>')
+def admin_experience_detail(experience_id):
+    """Détails d'une expérience pour l'admin."""
+    if 'username' not in session or session['username'] != 'Admin':
+        return redirect(url_for('login'))
+    try:
+        experience = experiences_collection.find_one({'_id': ObjectId(experience_id)})
+        if not experience:
+            flash('Expérience non trouvée.')
+            return redirect(url_for('admin'))
+        return render_template('admin/experience_detail.html', experience=experience)
+    except Exception:
+        flash('Erreur lors de la récupération.')
+        return redirect(url_for('admin'))
 
 if __name__ == '__main__':
     app.run(debug=True)

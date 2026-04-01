@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails Expérience - {{ experience.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="bg-gray-100 font-sans">
+    <nav class="bg-white shadow-md p-4 mb-8">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Détails Expérience: {{ experience.title }}</h1>
+            <div class="space-x-4">
+                <a href="/admin" class="text-blue-600 hover:text-blue-800">Retour à l'Admin</a>
+                <a href="/logout" class="text-blue-600 hover:text-blue-800">Déconnexion</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mx-auto px-4 max-w-4xl">
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4">Informations Expérience</h2>
+            <p><strong>Titre:</strong> {{ experience.title }}</p>
+            <p><strong>Créateur:</strong> {{ experience.creator }}</p>
+            <p><strong>Description:</strong> {{ experience.get('description', 'N/A') }}</p>
+            <p><strong>Lectures:</strong> {{ experience.get('plays', 0) }}</p>
+            <p><strong>Date de création:</strong> {{ experience.get('created_at', 'N/A') }}</p>
+        </div>
+
+        <div class="bg-white shadow-md rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-4">Paramètres</h2>
+            <p><strong>Couleur:</strong> {{ experience.get('color', 'N/A') }}</p>
+            <p><strong>Taille:</strong> {{ experience.get('size', 'N/A') }}</p>
+            <p><strong>Vitesse:</strong> {{ experience.get('speed', 'N/A') }}</p>
+            <p><strong>Gravité:</strong> {{ experience.get('gravity', 'N/A') }}</p>
+            <p><strong>Type:</strong> {{ experience.get('effect_type', 'N/A') }}</p>
+        </div>
+
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-2xl font-bold mb-4">Actions</h2>
+            <form method="POST" action="/delete_experience/{{ experience._id }}" style="display:inline;">
+                <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Supprimer cette Expérience</button>
+            </form>
+            <a href="/play/{{ experience._id }}" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded ml-4">Jouer l'Expérience</a>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

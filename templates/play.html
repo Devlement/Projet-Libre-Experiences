@@ -27,7 +27,40 @@
         <div class="bg-white shadow-md rounded-lg p-8 mb-6">
             <h1 class="text-3xl font-bold mb-4 text-gray-800">{{ experience.title }}</h1>
             <p class="text-gray-600 mb-4">{{ experience.description }}</p>
-            <p class="text-sm text-gray-500"><em>Par {{ experience.author }} • {{ experience.plays }} lectures</em></p>
+            
+            <!-- Tags -->
+            {% if experience.tags %}
+            <div class="mb-4 flex flex-wrap gap-2">
+                {% for tag in experience.tags %}
+                <span class="inline-block bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Like/Dislike Section -->
+            <div class="flex items-center justify-between border-t pt-4">
+                <p class="text-sm text-gray-500"><em>Par {{ experience.author }} • {{ experience.plays }} lectures</em></p>
+                {% if session.get('username') %}
+                <div class="flex items-center space-x-4">
+                    <button class="like-btn flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors" 
+                            data-experience-id="{{ experience._id }}"
+                            data-liked="{{ 'true' if user_liked else 'false' }}">
+                        <span>👍</span>
+                        <span class="like-count text-sm">{{ experience.likes|length }}</span>
+                    </button>
+                    <button class="dislike-btn flex items-center space-x-1 text-gray-600 hover:text-red-600 transition-colors"
+                            data-experience-id="{{ experience._id }}"
+                            data-disliked="{{ 'true' if user_disliked else 'false' }}">
+                        <span>👎</span>
+                        <span class="dislike-count text-sm">{{ experience.dislikes|length }}</span>
+                    </button>
+                </div>
+                {% else %}
+                <div class="text-sm text-gray-500">
+                    <a href="/login" class="text-blue-600 hover:text-blue-800">Connectez-vous</a> pour liker ou disliker
+                </div>
+                {% endif %}
+            </div>
         </div>
 
         {% if experience.type == 'interactive' %}
@@ -128,5 +161,55 @@
         window.addEventListener('resize', windowResized);
     </script>
     {% endif %}
+    
+    <script>
+        // Gestion des like/dislike
+        document.querySelectorAll('.like-btn, .dislike-btn').forEach(button => {
+            button.addEventListener('click', async function() {
+                const experienceId = this.getAttribute('data-experience-id');
+                const isLike = this.classList.contains('like-btn');
+                const endpoint = isLike ? `/like/${experienceId}` : `/dislike/${experienceId}`;
+                
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        
+                        // Mettre à jour les compteurs
+                        document.querySelector('.like-count').textContent = data.likes;
+                        document.querySelector('.dislike-count').textContent = data.dislikes;
+                        
+                        // Mettre à jour les états des boutons
+                        const likeBtn = document.querySelector('.like-btn');
+                        const dislikeBtn = document.querySelector('.dislike-btn');
+                        
+                        // Réinitialiser les styles
+                        likeBtn.classList.remove('text-green-600');
+                        dislikeBtn.classList.remove('text-red-600');
+                        
+                        // Appliquer les nouveaux styles si l'utilisateur a aimé/disliké
+                        if (isLike && likeBtn.getAttribute('data-liked') === 'true') {
+                            likeBtn.classList.add('text-green-600');
+                        } else if (!isLike && dislikeBtn.getAttribute('data-disliked') === 'true') {
+                            dislikeBtn.classList.add('text-red-600');
+                        }
+                        
+                        // Rafraîchir la page pour refléter l'état correct
+                        setTimeout(() => {
+                            location.reload();
+                        }, 300);
+                    }
+                } catch (error) {
+                    console.error('Erreur:', error);
+                }
+            });
+        });
+    </script>
 </body>
 </html>

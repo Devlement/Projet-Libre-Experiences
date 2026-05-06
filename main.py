@@ -393,7 +393,12 @@ def index():
             exp['type'] = 'narrative'
         if 'plays' not in exp:
             exp['plays'] = 0
-
+        if 'tags' not in exp:
+            exp['tags'] = []
+        if 'likes' not in exp:
+            exp['likes'] = []
+        if 'dislikes' not in exp:
+            exp['dislikes'] = []
     return render_template('index.html', experiences=experiences)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -443,6 +448,10 @@ def create():
         experience_type = request.form.get('experience_type', 'code')
         author = session['username']
         date = datetime.now()
+        
+        # Traiter les tags
+        tags_input = request.form.get('tags', '')
+        tags = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
 
         if experience_type == 'visual':
             visual_config = request.form.get('visual_config', '{}')
@@ -450,7 +459,6 @@ def create():
                 config = json.loads(visual_config)
                 code = generate_visual_code(config)
             except json.JSONDecodeError:
-                flash('Configuration invalide.')
                 return redirect(url_for('create'))
         else:
             code = request.form['code']
@@ -464,10 +472,12 @@ def create():
             "plays": 0,
             "type": "interactive",
             "creation_mode": experience_type,
+            "tags": tags,
+            "likes": [],
+            "dislikes": []
         }
 
         experiences_collection.insert_one(experience)
-        flash('Expérience créée avec succès !')
         return redirect(url_for('index'))
     return render_template('create.html')
 
@@ -477,14 +487,30 @@ def play(experience_id):
     try:
         experience = experiences_collection.find_one({"_id": ObjectId(experience_id)})
         if not experience:
-            flash('Expérience non trouvée.')
             return redirect(url_for('index'))
+        
+        # Initialiser les champs manquants pour les anciennes expériences
+        if 'tags' not in experience:
+            experience['tags'] = []
+        if 'likes' not in experience:
+            experience['likes'] = []
+        if 'dislikes' not in experience:
+            experience['dislikes'] = []
+        
+        # Vérifier si l'utilisateur actuel a aimé/disliké
+        current_user = session.get('username', '')
+        user_liked = current_user in experience.get('likes', [])
+        user_disliked = current_user in experience.get('dislikes', [])
 
         experiences_collection.update_one(
             {"_id": ObjectId(experience_id)},
             {"$inc": {"plays": 1}}
         )
-        return render_template('play.html', experience=experience)
+        
+        return render_template('play.html', 
+                             experience=experience,
+                             user_liked=user_liked,
+                             user_disliked=user_disliked)
     except Exception:
         flash('ID d\'expérience invalide.')
         return redirect(url_for('index'))
@@ -524,9 +550,8 @@ def delete_experience(experience_id):
         return redirect(url_for('login'))
     try:
         experiences_collection.delete_one({'_id': ObjectId(experience_id)})
-        flash('Expérience supprimée avec succès.')
     except Exception:
-        flash('Erreur lors de la suppression.')
+        flash('ID d\'expérience invalide.')
     return redirect(url_for('admin'))
 
 @app.route('/ban_user/<username>', methods=['POST'])
@@ -554,7 +579,6 @@ def admin_user_detail(username):
         return redirect(url_for('login'))
     user = users_collection.find_one({'username': username})
     if not user:
-        flash('Utilisateur non trouvé.')
         return redirect(url_for('admin'))
     user_experiences = list(experiences_collection.find({'creator': username}))
     total_plays = sum(exp.get('plays', 0) for exp in user_experiences)
@@ -568,12 +592,90 @@ def admin_experience_detail(experience_id):
     try:
         experience = experiences_collection.find_one({'_id': ObjectId(experience_id)})
         if not experience:
-            flash('Expérience non trouvée.')
             return redirect(url_for('admin'))
         return render_template('admin/experience_detail.html', experience=experience)
     except Exception:
-        flash('Erreur lors de la récupération.')
         return redirect(url_for('admin'))
+    
+@app.route('/like/<experience_id>', methods=['POST'])
+def like_experience(experience_id):
+    """Ajouter un like à une expérience."""
+    if 'username' not in session:
+        return {"status": "error", "message": "Non authentifié"}, 401
+    
+    try:
+        username = session['username']
+        experience = experiences_collection.find_one({"_id": ObjectId(experience_id)})
+        
+        if not experience:
+            return {"status": "error", "message": "Expérience non trouvée"}, 404
+        
+        # Initialiser les listes si elles n'existent pas
+        likes = experience.get('likes', [])
+        dislikes = experience.get('dislikes', [])
+        
+        # Vérifier si l'utilisateur a déjà aimé
+        if username in likes:
+            # Retirer le like
+            likes.remove(username)
+        else:
+            # Ajouter le like
+            likes.append(username)
+            # Retirer le dislike s'il existe
+            if username in dislikes:
+                dislikes.remove(username)
+        
+        experiences_collection.update_one(
+            {"_id": ObjectId(experience_id)},
+            {"$set": {"likes": likes, "dislikes": dislikes}}
+        )
+        
+        return {"status": "success", "likes": len(likes), "dislikes": len(dislikes)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 400
+
+@app.route('/dislike/<experience_id>', methods=['POST'])
+def dislike_experience(experience_id):
+    """Ajouter un dislike à une expérience."""
+    if 'username' not in session:
+        return {"status": "error", "message": "Non authentifié"}, 401
+    
+    try:
+        username = session['username']
+        experience = experiences_collection.find_one({"_id": ObjectId(experience_id)})
+        
+        if not experience:
+            return {"status": "error", "message": "Expérience non trouvée"}, 404
+        
+        # Initialiser les listes si elles n'existent pas
+        likes = experience.get('likes', [])
+        dislikes = experience.get('dislikes', [])
+        
+        # Vérifier si l'utilisateur a déjà disliké
+        if username in dislikes:
+            # Retirer le dislike
+            dislikes.remove(username)
+        else:
+            # Ajouter le dislike
+            dislikes.append(username)
+            # Retirer le like s'il existe
+            if username in likes:
+                likes.remove(username)
+        
+        experiences_collection.update_one(
+            {"_id": ObjectId(experience_id)},
+            {"$set": {"likes": likes, "dislikes": dislikes}}
+        )
+        
+        return {"status": "success", "likes": len(likes), "dislikes": len(dislikes)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 400
+
+@app.route('/logout')
+def logout():
+    """Déconnecte l'utilisateur en supprimant la session."""
+    session.pop('username', None)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)

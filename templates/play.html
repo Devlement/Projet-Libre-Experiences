@@ -8,6 +8,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
+    <!-- Loader -->
+    <div id="loader">
+        <div class="loader-spinner"></div>
+    </div>
+    
     <nav class="bg-white shadow-md p-4 mb-8">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold text-gray-800">Expériences Satisfaisantes</h1>
@@ -211,5 +216,6 @@
             });
         });
     </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
